@@ -18,6 +18,7 @@ from typing import Optional
 
 from typing_extensions import override
 
+from .eval_case import ConversationScenario
 from .eval_case import Invocation
 from .eval_metrics import EvalMetric
 from .eval_metrics import Interval
@@ -99,7 +100,8 @@ class ResponseEvaluator(Evaluator):
   def evaluate_invocations(
       self,
       actual_invocations: list[Invocation],
-      expected_invocations: Optional[list[Invocation]],
+      expected_invocations: Optional[list[Invocation]] = None,
+      conversation_scenario: Optional[ConversationScenario] = None,
   ) -> EvaluationResult:
     # If the metric is response_match_score, just use the RougeEvaluator.
     if self._metric_name == PrebuiltMetrics.RESPONSE_MATCH_SCORE.value:
@@ -107,11 +109,13 @@ class ResponseEvaluator(Evaluator):
           EvalMetric(metric_name=self._metric_name, threshold=self._threshold)
       )
       return rouge_evaluator.evaluate_invocations(
-          actual_invocations, expected_invocations
+          actual_invocations, expected_invocations, conversation_scenario
       )
 
     return _VertexAiEvalFacade(
         threshold=self._threshold,
         metric_name=self._metric_name,
         expected_invocations_required=True,
-    ).evaluate_invocations(actual_invocations, expected_invocations)
+    ).evaluate_invocations(
+        actual_invocations, expected_invocations, conversation_scenario
+    )
